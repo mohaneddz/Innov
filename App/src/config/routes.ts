@@ -1,0 +1,25 @@
+export const ROUTES = {
+  root: "/",
+  login: "/login",
+  loginOrganization: "/auth/organization/login",
+  registerOrganization: "/auth/organization/register",
+  loginStaff: "/auth/staff/login",
+  registerStaff: "/auth/staff/register",
+  summary: "/summary",
+  home: "/home",
+  controlCenter: "/control-center",
+  devices: "/devices",
+  deviceDetails: "/devices/:deviceId",
+  network: "/network",
+  accounts: "/accounts",
+  training: "/training",
+  cisco: "/cisco",
+  chat: "/chat",
+  billingUsage: "/billing-usage",
+  settings: "/settings",
+  account: "/account",
+  virtualMachines: "/virtual-machines",
+  notFound: "*",
+} as const;
+
+export type AppRouteKey = keyof typeof ROUTES;

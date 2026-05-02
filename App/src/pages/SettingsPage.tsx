@@ -1,0 +1,351 @@
+import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/cards/BaseCards";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
+import {
+  getApiOverrides,
+  saveApiOverrides,
+  clearApiOverrides,
+  ENV_DEFAULTS,
+  type ApiKeysConfig,
+} from "@/lib/apiKeysStore";
+
+type SettingsTabKey = "general" | "api";
+
+const tabs: Array<{ key: SettingsTabKey; labelKey: string }> = [
+  { key: "general", labelKey: "settings.tab.general" },
+  { key: "api", labelKey: "settings.tab.api" },
+];
+
+
+
+
+
+function SettingSwitch({
+  label,
+  helper,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  helper: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
+      <div>
+        <p className="m-0 text-sm font-semibold text-[var(--color-neutral-100)]">{label}</p>
+        <p className="m-0 mt-1 text-xs text-[var(--color-neutral-500)]">{helper}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        className={[
+          "relative h-6 w-11 shrink-0 rounded-full border transition-colors outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30 disabled:opacity-50",
+          checked ? "border-[var(--color-primary)]/30 bg-[var(--color-primary)]" : "border-[var(--color-border)] bg-[var(--color-surface-hover)]",
+        ].join(" ")}
+        aria-pressed={checked}
+      >
+        <span
+          className={[
+            "pointer-events-none mx-0.5 block h-4 w-4 rounded-full bg-white transition-transform",
+            checked ? "translate-x-5 shadow-sm" : "translate-x-0 shadow-sm",
+          ].join(" ")}
+        />
+      </button>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// API Keys panel
+// ──────────────────────────────────────────────────────────────────
+type ApiKeyField = {
+  key: keyof ApiKeysConfig;
+  label: string;
+  type?: "text" | "password" | "number";
+  helperKey?: string;
+};
+
+const API_KEY_FIELDS: ApiKeyField[] = [
+  { key: "pineconeApiKey", label: "Pinecone API Key", type: "password", helperKey: "settings.api.helper.pineconeKey" },
+  { key: "pineconeIndexName", label: "Pinecone Index Name", helperKey: "settings.api.helper.pineconeIndex" },
+  { key: "pineconeNamespace", label: "Pinecone Namespace", helperKey: "settings.api.helper.pineconeNamespace" },
+  { key: "pineconeTopK", label: "Pinecone Top-K", type: "number", helperKey: "settings.api.helper.pineconeTopK" },
+  { key: "groqApiKey", label: "Groq API Key", type: "password", helperKey: "settings.api.helper.groqKey" },
+  { key: "groqBaseUrl", label: "Groq Base URL", helperKey: "settings.api.helper.groqBaseUrl" },
+  { key: "groqChatModel", label: "Groq Chat Model", helperKey: "settings.api.helper.groqModel" },
+];
+
+function ApiKeysPanel() {
+  const { t } = useAppSettings();
+  const [form, setForm] = useState<Partial<Record<keyof ApiKeysConfig, string>>>({}); 
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [isVisible, setIsVisible] = useState<Record<keyof ApiKeysConfig, boolean>>(
+    {} as Record<keyof ApiKeysConfig, boolean>
+  );
+
+  useEffect(() => {
+    void getApiOverrides().then((overrides) => {
+      const stringified: Partial<Record<keyof ApiKeysConfig, string>> = {};
+      for (const k of Object.keys(overrides) as (keyof ApiKeysConfig)[]) {
+        stringified[k] = String(overrides[k] ?? "");
+      }
+      setForm(stringified);
+    });
+  }, []);
+
+  const handleChange = (key: keyof ApiKeysConfig, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setStatus("idle");
+  };
+
+  const handleSave = async () => {
+    setStatus("saving");
+    try {
+      // Build typed overrides — skip blank strings (those revert to default)
+      const overrides: Partial<ApiKeysConfig> = {};
+      for (const field of API_KEY_FIELDS) {
+        const val = form[field.key]?.trim();
+        if (val && val !== "") {
+          if (field.type === "number") {
+            overrides[field.key] = Number(val) as never;
+          } else {
+            (overrides as any)[field.key] = val;
+          }
+        }
+      }
+      await saveApiOverrides(overrides);
+      setStatus("saved");
+      setTimeout(() => setStatus("idle"), 2500);
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  const handleReset = async () => {
+    await clearApiOverrides();
+    setForm({});
+    setStatus("idle");
+  };
+
+  const toggleVisible = (key: keyof ApiKeysConfig) => {
+    setIsVisible((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <section className="card p-4">
+      <div className="mb-4">
+        <p className="m-0 text-sm font-semibold text-[var(--color-neutral-100)]">{t("settings.api.title")}</p>
+        <p className="m-0 mt-1 text-xs text-[var(--color-neutral-500)]">
+          {t("settings.api.description")}
+        </p>
+      </div>
+
+      <div className="grid gap-3">
+        {API_KEY_FIELDS.map((field) => {
+          const envDefault = String(ENV_DEFAULTS[field.key]);
+          const inputType =
+            field.type === "password" && !isVisible[field.key]
+              ? "password"
+              : field.type === "number"
+              ? "number"
+              : "text";
+
+          return (
+            <div
+              key={field.key}
+              className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3"
+            >
+              <div className="mb-2 flex items-baseline justify-between">
+                <label
+                  htmlFor={`api-key-${field.key}`}
+                  className="text-sm font-semibold text-[var(--color-neutral-100)]"
+                >
+                  {field.label}
+                </label>
+                {field.helperKey && (
+                  <span className="text-xs text-[var(--color-neutral-500)]">
+                    {t(field.helperKey)}
+                  </span>
+                )}
+              </div>
+              <div className="relative flex items-center gap-2">
+                <input
+                  id={`api-key-${field.key}`}
+                  type={inputType}
+                  value={form[field.key] ?? ""}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  placeholder={envDefault || t("settings.api.placeholder")}
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-neutral-100)] placeholder-slate-500 outline-none ring-cyan-300/40 focus:ring font-mono"
+                />
+                {field.type === "password" && (
+                  <button
+                    type="button"
+                    onClick={() => toggleVisible(field.key)}
+                    className="shrink-0 text-xs text-[var(--color-neutral-400)] hover:text-cyan-300 transition-colors"
+                    aria-label={isVisible[field.key] ? t("settings.api.hide") : t("settings.api.show")}
+                  >
+                    {isVisible[field.key] ? t("settings.api.hide") : t("settings.api.show")}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={status === "saving"}
+          className="rounded-md bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/30 px-4 py-2 text-sm font-semibold text-[var(--color-primary-strong)] hover:bg-[var(--color-primary)]/30 transition-colors disabled:opacity-50"
+        >
+          {status === "saving" ? t("settings.api.saving") : t("settings.api.save")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => void handleReset()}
+          className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-2 text-sm font-semibold text-[var(--color-neutral-300)] hover:bg-[var(--color-surface-hover)] transition-colors"
+        >
+          {t("settings.api.reset")}
+        </button>
+
+        {status === "saved" && (
+          <span className="text-xs text-emerald-400">✓ {t("settings.api.saved")}</span>
+        )}
+        {status === "error" && (
+          <span className="text-xs text-red-400">{t("settings.api.error")}</span>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>("general");
+  const {
+    settings,
+    startupError,
+    setHideToTray,
+    setLaunchAtStartup,
+    setStartMinimized,
+    setLanguage,
+    setTheme,
+    t,
+  } = useAppSettings();
+
+  return (
+    <div className="page-section">
+      <PageHeader badge={t("sidebar.item.settings")} title={t("settings.title")} description={t("settings.description")} />
+
+      <section className="card p-3 mb-6">
+        <div className="flex w-full gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={[
+                "flex-1 rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-colors",
+                activeTab === tab.key ? "bg-[var(--color-primary)]/15 text-[var(--color-primary-strong)] dark:text-[var(--color-primary-strong)]" : "bg-[var(--color-surface-muted)] text-[var(--color-neutral-300)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-neutral-100)]",
+              ].join(" ")}
+            >
+              {t(tab.labelKey)}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {activeTab === "general" && (
+        <section className="card p-4">
+          <div className="mb-3">
+            <p className="m-0 text-sm font-semibold text-[var(--color-neutral-100)]">{t("settings.desktop.title")}</p>
+            <p className="m-0 mt-1 text-xs text-[var(--color-neutral-500)]">{t("settings.desktop.description")}</p>
+          </div>
+
+          <div className="grid gap-3">
+            <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="m-0 text-sm font-semibold text-[var(--color-neutral-100)]">{t("settings.theme")}</p>
+                  <p className="m-0 mt-1 text-xs text-[var(--color-neutral-500)]">{t("settings.theme.helper")}</p>
+                </div>
+                <select
+                  value={settings.theme}
+                  onChange={(event) => void setTheme(event.target.value === "light" ? "light" : "dark")}
+                  className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-neutral-100)] outline-none ring-cyan-300/40 focus:ring"
+                >
+                  <option value="dark">{t("settings.theme.dark")}</option>
+                  <option value="light">{t("settings.theme.light")}</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="m-0 text-sm font-semibold text-[var(--color-neutral-100)]">{t("settings.language")}</p>
+                  <p className="m-0 mt-1 text-xs text-[var(--color-neutral-500)]">{t("settings.language.helper")}</p>
+                </div>
+                <select
+                  value={settings.language}
+                  onChange={(event) => void setLanguage(event.target.value === "fr" ? "fr" : "en")}
+                  className="rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-neutral-100)] outline-none ring-cyan-300/40 focus:ring"
+                >
+                  <option value="en">{t("settings.english")}</option>
+                  <option value="fr">{t("settings.french")}</option>
+                </select>
+              </div>
+            </div>
+
+            <SettingSwitch
+              label={t("settings.launchAtStartup")}
+              helper={t("settings.launchAtStartup.helper")}
+              checked={settings.launchAtStartup}
+              onChange={(enabled) => {
+                void setLaunchAtStartup(enabled);
+              }}
+            />
+
+            <SettingSwitch
+              label={t("settings.startMinimized")}
+              helper={t("settings.startMinimized.helper")}
+              checked={settings.startMinimized}
+              disabled={!settings.launchAtStartup}
+              onChange={(enabled) => {
+                void setStartMinimized(enabled);
+              }}
+            />
+
+            <SettingSwitch
+              label={t("settings.hideToTray")}
+              helper={t("settings.hideToTray.helper")}
+              checked={settings.hideToTray}
+              onChange={(enabled) => {
+                void setHideToTray(enabled);
+              }}
+            />
+
+            <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] px-4 py-3">
+              <p className="m-0 text-sm font-semibold text-[var(--color-neutral-100)]">{t("settings.globalShortcut")}</p>
+              <p className="m-0 mt-1 text-xs text-[var(--color-neutral-500)]">{t("settings.globalShortcut.helper")}</p>
+              <code className="mt-3 inline-block rounded-md bg-[var(--color-bg)] px-2 py-1 text-xs text-[var(--color-primary-strong)]">Ctrl + Shift + L</code>
+            </div>
+
+            {startupError ? <p className="m-0 text-xs text-red-300">{startupError}</p> : null}
+          </div>
+        </section>
+      )}
+
+      {activeTab === "api" && <ApiKeysPanel />}
+
+      
+    </div>
+  );
+}
