@@ -1,0 +1,28 @@
+{
+  "topics": [
+    {
+      "id": "credentials",
+      "text": "password passphrase api key private key ssh key secret token access token refresh token bearer token oauth jwt login credential admin credential vault secret .env keyfile"
+    },
+    {
+      "id": "employee_data",
+      "text": "employee records hr files personal identifiers pii social security ssn passport national id date of birth home address phone number compensation payroll profile"
+    },
+    {
+      "id": "finance",
+      "text": "bank account iban swift routing number payroll salary invoices purchase orders financial statements revenue forecast tax report payment data billing"
+    },
+    {
+      "id": "legal",
+      "text": "nda non disclosure agreement contract legal terms confidential agreement merger acquisition compliance investigation settlement privileged legal memo"
+    },
+    {
+      "id": "customer_data",
+      "text": "customer database client records pii personal data email address phone number support tickets billing details account identifiers private client information crm export"
+    },
+    {
+      "id": "ip_strategy",
+      "text": "source code repository architecture diagram system design roadmap unreleased product strategy internal planning proprietary design trade secret algorithm model weights confidential technical document"
+    }
+  ]
+}
