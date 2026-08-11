@@ -7,3 +7,6 @@
 App/lightmode_issues_full.txt
 **/migrations/__pycache__/
 .vscode
+# rewrite cleanup
+.env*
+plan.md
