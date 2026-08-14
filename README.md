@@ -13,6 +13,22 @@ A three-part security awareness and monitoring platform:
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="App/documents/design/Dashboard-1.png" alt="ORCA dashboard overview" width="100%">
+</p>
+
+<p align="center">
+  <img src="App/documents/design/Dashboard-2.png" alt="ORCA analytics dashboard" width="100%">
+</p>
+
+<p align="center">
+  <img src="App/documents/design/Dashboard-3.png" alt="ORCA dashboard design" width="100%">
+</p>
+
+---
+
 ## Prerequisites
 
 | Tool | Version | Notes |
