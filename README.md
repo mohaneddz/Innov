@@ -13,6 +13,18 @@ A three-part security awareness and monitoring platform:
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/orca-sign-in.png" alt="ORCA organization sign-in screen" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/orca-cisco-devices.png" alt="ORCA Cisco device management dashboard" width="100%">
+</p>
+
+---
+
 ## Prerequisites
 
 | Tool | Version | Notes |
