@@ -283,7 +283,7 @@ export default function TrainingPage() {
         ]}
       />
 
-      <StatGrid stats={kpiStats} cols={4} />
+      <StatGrid stats={kpiStats} cols={5} />
 
       {badDeptAlerts.length > 0 && (
         <div className="card p-4 border border-cyan-500/15">

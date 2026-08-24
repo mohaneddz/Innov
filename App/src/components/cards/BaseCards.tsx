@@ -52,9 +52,9 @@ export function StatGrid({
 }: {
   stats: StatItem[];
   className?: string;
-  cols?: 3 | 4;
+  cols?: 3 | 4 | 5;
 }) {
-  const lgColsClass = cols === 4 ? "lg:grid-cols-5" : "lg:grid-cols-3";
+  const lgColsClass = cols === 5 ? "lg:grid-cols-5" : cols === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3";
   return (
     <section className={`grid gap-4 sm:grid-cols-2 ${className || lgColsClass}`}>
       {stats.map((stat, i) => {
