@@ -1,3 +1,5 @@
+![ORCA](screenshots/cover.avif)
+
 <h1 style="font-family: Arial, sans-serif; font-size: 36px; color: #58A6FF; display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #58A6FF; padding-bottom: 8px;">
   <img src="App/src-tauri/icons/128x128.png" alt="ORCA Icon" style="height: 55px; width: 55px; object-fit: contain; border-radius: 8px;">
   ORCA - Cyber Maturity Cockpit
